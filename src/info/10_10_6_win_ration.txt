@@ -1,1 +1,1 @@
-self-play次数, pure_MCTS战力， 胜率
+self-play, pure_MCTS, 123

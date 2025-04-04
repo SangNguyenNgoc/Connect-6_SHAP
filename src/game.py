@@ -199,6 +199,7 @@ class Game(object):
             current_player = self.board.get_current_player()
             player_in_turn = players[current_player]
             move = player_in_turn.get_action(self.board)
+            print("move AI:", move)
             self.board.do_move(move)
             if is_shown:
                 self.graphic(self.board, player1.player, player2.player)
@@ -211,6 +212,57 @@ class Game(object):
                         print("Game end. Tie")
                 return winner
 
+    def generate_fen(self, board_state, move, player):
+        rows, cols, win_condition = 10, 10, 6
+        board = [['.' for _ in range(cols)] for _ in range(rows)]
+
+        # Đặt quân cờ vào bàn cờ
+        for pos, value in board_state.items():
+            r, c = divmod(pos, cols)
+            board[r][c] = 'b' if value == 1 else 'w'
+
+        # # Đặt nước đi mới
+        # move_r, move_c = divmod(move, cols)
+        # board[move_r][move_c] = 'b' if player == 1 else 'w'
+
+        # Tạo chuỗi FEN
+        fen_rows = []
+        for row in board:
+            empty_count = 0
+            fen_row = ''
+            for cell in row:
+                if cell == '.':
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen_row += str(empty_count)
+                        empty_count = 0
+                    fen_row += cell
+            if empty_count > 0:
+                fen_row += str(empty_count)
+            fen_rows.append(fen_row)
+
+        def next_player_connect6(board_state):
+            if not board_state:
+                return 1  # Nếu chưa có quân nào, người chơi 1 đi trước
+
+            moves = list(board_state.items())
+
+            if len(moves) == 1:
+                return 2  # Nếu chỉ có một nước đi, người chơi 2 đi tiếp
+
+            last_move_pos, last_player = moves[-1]  # Nước đi cuối
+            second_last_move_pos, second_last_player = moves[-2]  # Nước đi gần cuối
+
+            if last_player == second_last_player:
+                return 3 - last_player  # Nếu cùng người chơi, họ đã đặt đủ 2 quân -> đổi lượt
+            return last_player  # Nếu khác nhau, người chơi cuối chưa hoàn tất lượt -> tiếp tục đi
+
+        next_turn = next_player_connect6(board_state)
+        last_movi, last_player = list(board_state.items())[-1]
+
+        fen = '/'.join(fen_rows) + f' [{"b" if next_turn == 1 else "w"}] {len(board_state)} - {"b" if last_player == 1 else "w"}{last_movi} - {"b" if next_turn == 1 else "w"}{move}'
+        return fen
 
     def start_self_play(self, player, is_shown=0, temp=1e-3):
         """ start a self-play game using a MCTS player, reuse the search tree,
@@ -223,6 +275,13 @@ class Game(object):
             move, move_probs = player.get_action(self.board,
                                                  temp=temp,
                                                  return_prob=1)
+
+            if current_players:
+                fen = self.generate_fen(self.board.states, move, current_players[-1])
+                print(f"board: {self.board.states}")
+                print(f"fen: {fen}")
+                open("fen.csv", "a").write(f"{fen}\n")
+                print("////////////////////////////////////////////")
             # store the data
             states.append(self.board.current_state())
             mcts_probs.append(move_probs)
@@ -240,10 +299,10 @@ class Game(object):
                     winners_z[np.array(current_players) != winner] = -1.0
                 # reset MCTS root node
                 player.reset_player()
+                open("fen.csv", "a").write(f"======\n")
                 if is_shown:
                     if winner != -1:
                         print("Game end. Winner is player:", winner)
                     else:
                         print("Game end. Tie")
                 return winner, zip(states, mcts_probs, winners_z)
-

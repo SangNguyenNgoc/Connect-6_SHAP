@@ -95,6 +95,7 @@ class TrainPipeline():
             play_data = self.get_equi_data(play_data)
             self.data_buffer.extend(play_data)
 
+
     def policy_update(self):
         """update the policy-value net"""
         mini_batch = random.sample(self.data_buffer, self.batch_size)
@@ -164,12 +165,21 @@ class TrainPipeline():
                 win_cnt[1], win_cnt[2], win_cnt[-1]))
         return win_ratio
 
+    def run_self(self):
+        """Run self-play games without logging or saving models"""
+        try:
+            for i in range(self.game_batch_num):
+                self.collect_selfplay_data(self.play_batch_size)
+                print("batch i:{}, episode_len:{}".format(i + 1, self.episode_len))
+        except KeyboardInterrupt:
+            print('\nQuit')
+
     def run(self):
         """run the training pipeline"""
         with open("info/"+str(self.board)+"_loss_"+self.output_file_name+".txt",'w') as loss_file:
-            loss_file.write("self-play次数,loss,entropy\n")
+            loss_file.write("self-play,loss,entropy\n")
         with open("info/"+str(self.board)+"_win_ration"+self.output_file_name+".txt", 'w') as win_ratio_file:
-            win_ratio_file.write("self-play次数, pure_MCTS战力， 胜率\n")
+            win_ratio_file.write("self-play, pure_MCTS, 123\n")
         try:
             for i in range(self.game_batch_num):
                 self.collect_selfplay_data(self.play_batch_size)
@@ -209,13 +219,14 @@ class TrainPipeline():
         win_ratio_file.close()
 
 def usage():
-    print("-s 设置棋盘大小，默认为6")
-    print("-r 设置是几子棋，默认为4")
-    print("-m 设置每步棋执行MCTS模拟的次数，默认为400")
-    print("-o 训练好的模型存入文件的标识符（注意：程序会根据模型的参数自动生成文件名的前半部分）")
-    print("-n 设置训练局数，默认为1500")
-    print("--use_gpu 使用GPU进行训练")
-    print("--graphics 当进行模型评估时，显示对战界面")
+    print("-s Thiết lập kích thước bàn cờ, mặc định là 6")
+    print("-r Thiết lập số quân liên tiếp để thắng, mặc định là 4")
+    print("-m Thiết lập số lần mô phỏng MCTS cho mỗi lượt đi, mặc định là 400")
+    print(
+        "-o Định danh tên file để lưu mô hình đã huấn luyện (Lưu ý: chương trình sẽ tự động tạo phần đầu của tên file dựa trên các tham số mô hình)")
+    print("-n Thiết lập số ván dùng để huấn luyện, mặc định là 1500")
+    print("--use_gpu Sử dụng GPU để huấn luyện")
+    print("--graphics Hiển thị giao diện đồ họa khi đánh giá mô hình")
 
 
 if __name__ == '__main__':
@@ -260,4 +271,4 @@ if __name__ == '__main__':
                                       output_file_name=output_file_name,
                                       init_model=init_model_name,
                                       game_batch_number=game_batch_number)
-    training_pipeline.run()
+    training_pipeline.run_self()

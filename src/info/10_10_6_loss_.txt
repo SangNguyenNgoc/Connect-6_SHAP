@@ -1,1 +1,1 @@
-self-play次数,loss,entropy
+self-play,loss,entropy

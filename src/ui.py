@@ -342,6 +342,7 @@ class UserInterface_GO_Human_vs_AI(QWidget):
 #            print('The pointer points to', playerName)
 #            print('current Player is ', currentPlayer, '.')
             nextMove = currentPlayer.get_action(self.board)
+            print(nextMove)
             self.board.do_move(nextMove)
             nextLocation = self.board.move_to_location(nextMove)
             i, j = nextLocation[0], nextLocation[1]
